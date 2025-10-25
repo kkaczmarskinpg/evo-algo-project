@@ -31,33 +31,68 @@ from opfunu.cec_based.cec2014 import F162014, F52014
 
 class ObjectiveFunctions:
     """Collection of test objective functions."""
-    @staticmethod
-    def FuncMichalewicz(x):
-        try:
-            return Michalewicz()(x)
-        except Exception as e:
-            raise ValueError(f"Michalewicz function error: {str(e)}. Requires exactly 2 dimensions.")
     
     @staticmethod
-    def FuncAckley(x):
+    def FuncMichalewicz(x, dim=None):
         try:
-            return Ackley()(x)
+            if dim is None:
+                dim = len(x)
+            return Michalewicz(n_dimensions=dim)(x)
         except Exception as e:
-            raise ValueError(f"Ackley library function error: {str(e)}. Requires exactly 2 dimensions.")
+            raise ValueError(f"Michalewicz function error: {str(e)}. Check dimension compatibility.")
     
     @staticmethod
-    def FuncF162014(x):
+    def FuncAckley(x, dim=None):
         try:
-            return F162014().evaluate(x)
+            if dim is None:
+                dim = len(x)
+            return Ackley(n_dimensions=dim)(x)
         except Exception as e:
-            raise ValueError(f"F16-2014 function error: {str(e)}. Requires exactly 30 dimensions.")
+            raise ValueError(f"Ackley library function error: {str(e)}. Check dimension compatibility.")
     
     @staticmethod
-    def FuncF52014(x):
+    def FuncF162014(x, dim=None):
         try:
-            return F52014().evaluate(x)
+            if dim is None:
+                dim = len(x)
+            
+            # F16-2014 only supports specific dimensions: [10, 20, 30, 50, 100]
+            supported_dims = [10, 20, 30, 50, 100]
+            if dim not in supported_dims:
+                # Use closest supported dimension
+                closest_dim = min(supported_dims, key=lambda d: abs(d - dim))
+                # Pad or truncate input to match supported dimension
+                if len(x) < closest_dim:
+                    x_adjusted = list(x) + [0.0] * (closest_dim - len(x))
+                else:
+                    x_adjusted = x[:closest_dim]
+                return F162014(ndim=closest_dim).evaluate(x_adjusted)
+            else:
+                return F162014(ndim=dim).evaluate(x)
         except Exception as e:
-            raise ValueError(f"F5-2014 function error: {str(e)}. Requires exactly 30 dimensions.")
+            raise ValueError(f"F16-2014 function error: {str(e)}. Supported dimensions: [10, 20, 30, 50, 100].")
+    
+    @staticmethod
+    def FuncF52014(x, dim=None):
+        try:
+            if dim is None:
+                dim = len(x)
+            
+            # F5-2014 only supports specific dimensions: [10, 20, 30, 50, 100]
+            supported_dims = [10, 20, 30, 50, 100]
+            if dim not in supported_dims:
+                # Use closest supported dimension
+                closest_dim = min(supported_dims, key=lambda d: abs(d - dim))
+                # Pad or truncate input to match supported dimension
+                if len(x) < closest_dim:
+                    x_adjusted = list(x) + [0.0] * (closest_dim - len(x))
+                else:
+                    x_adjusted = x[:closest_dim]
+                return F52014(ndim=closest_dim).evaluate(x_adjusted)
+            else:
+                return F52014(ndim=dim).evaluate(x)
+        except Exception as e:
+            raise ValueError(f"F5-2014 function error: {str(e)}. Supported dimensions: [10, 20, 30, 50, 100].")
 
 
 class GAConfigPanel:
@@ -93,12 +128,26 @@ class GAConfigPanel:
         """Auto-adjust variables when function selection changes."""
         function_name = self.config_vars['function_name'].get()
         
-        # Set appropriate number of variables based on function requirements
+        # Set appropriate default number of variables and bounds
         if function_name in ['michalewicz', 'ackley']:
-            self.config_vars['num_variables'].set(2)
+            # Default to 2D but allow user to change
+            if self.config_vars['num_variables'].get() < 2:
+                self.config_vars['num_variables'].set(2)
+            # Set appropriate bounds for these functions
+            self.config_vars['bound_min'].set(0.0)
+            self.config_vars['bound_max'].set(3.14159)  # pi for Michalewicz
         elif function_name in ['f16_2014', 'f5_2014']:
-            self.config_vars['num_variables'].set(30)
-            # Also adjust bounds for CEC functions
+            # CEC functions support specific dimensions: [10, 20, 30, 50, 100]
+            # Default to 30D (most common test dimension)
+            current_vars = self.config_vars['num_variables'].get()
+            supported_dims = [10, 20, 30, 50, 100]
+            
+            if current_vars not in supported_dims:
+                # Set to closest supported dimension, defaulting to 30
+                closest_dim = min(supported_dims, key=lambda d: abs(d - current_vars)) if current_vars > 0 else 30
+                self.config_vars['num_variables'].set(closest_dim)
+            
+            # Set appropriate bounds for CEC functions
             self.config_vars['bound_min'].set(-100.0)
             self.config_vars['bound_max'].set(100.0)
     
@@ -266,13 +315,20 @@ class GAConfigPanel:
     
     def get_objective_function(self) -> Callable:
         """Get objective function from selection."""
-        function_map = {
-            'michalewicz': ObjectiveFunctions.FuncMichalewicz,
-            'ackley': ObjectiveFunctions.FuncAckley,
-            'f16_2014': ObjectiveFunctions.FuncF162014,
-            'f5_2014': ObjectiveFunctions.FuncF52014
-        }
-        return function_map[self.config_vars['function_name'].get()]
+        function_name = self.config_vars['function_name'].get()
+        num_variables = self.config_vars['num_variables'].get()
+        
+        # Create a wrapper function that passes the dimension parameter
+        if function_name == 'michalewicz':
+            return lambda x: ObjectiveFunctions.FuncMichalewicz(x, dim=num_variables)
+        elif function_name == 'ackley':
+            return lambda x: ObjectiveFunctions.FuncAckley(x, dim=num_variables)
+        elif function_name == 'f16_2014':
+            return lambda x: ObjectiveFunctions.FuncF162014(x, dim=num_variables)
+        elif function_name == 'f5_2014':
+            return lambda x: ObjectiveFunctions.FuncF52014(x, dim=num_variables)
+        else:
+            raise ValueError(f"Unknown function: {function_name}")
     
     def is_minimize(self) -> bool:
         """Get optimization direction."""
@@ -465,11 +521,14 @@ class GAApp:
             function_name = self.config_panel.config_vars['function_name'].get()
             num_variables = self.config_panel.config_vars['num_variables'].get()
             
-            if function_name in ['michalewicz', 'ackley'] and num_variables != 2:
-                messagebox.showerror("Error", f"{function_name} function requires exactly 2 variables!")
+            # Basic validation - all functions need at least 1 variable
+            if num_variables < 1:
+                messagebox.showerror("Error", "Number of variables must be at least 1!")
                 return
-            elif function_name in ['f16_2014', 'f5_2014'] and num_variables != 30:
-                messagebox.showerror("Error", f"{function_name} function requires exactly 30 variables!")
+            
+            # Function-specific validation
+            if function_name in ['michalewicz'] and num_variables < 2:
+                messagebox.showerror("Error", "Michalewicz function requires at least 2 variables!")
                 return
             
             # Update UI state
