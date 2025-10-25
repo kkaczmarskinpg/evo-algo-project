@@ -1,0 +1,6 @@
+numpy>=1.21.0
+opfunu>=1.0.0
+benchmark-functions>=1.0.0
+matplotlib>=3.5.0
+scipy>=1.7.0
+setuptools>=65.0.0
