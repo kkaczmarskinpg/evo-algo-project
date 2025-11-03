@@ -681,6 +681,7 @@ class GAApp:
         self.progress_var.set("Ready")
         self.progress_bar['value'] = 0
         self.results = None
+        self.saved_results = []
     
     def _handle_error(self, error_message: str):
         """Handle errors during execution."""
