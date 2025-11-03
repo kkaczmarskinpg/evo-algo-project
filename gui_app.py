@@ -592,7 +592,7 @@ class GAApp:
                         self.saved_results.append({
                             "generation": result.generation,
                             "best_fitness": result.best_fitness,
-                            "best_solution": result.best_solution,
+                            "best_solution": result.best_individual,
                             "mean_fitness": result.average_fitness,
                             "std_dev": result.std_fitness
                         })
