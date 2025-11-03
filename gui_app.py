@@ -6,7 +6,7 @@ Date: October 25, 2025
 A simple tkinter-based GUI for configuring and running genetic algorithms
 with real-time plotting and execution time monitoring.
 """
-
+import csv
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import matplotlib.pyplot as plt
@@ -415,6 +415,9 @@ class GAApp:
         self.root = tk.Tk()
         self.root.title("Genetic Algorithm")
         self.root.geometry("1400x800")
+
+        # List for Saved results
+        self.saved_results = []
         
         # GA instance
         self.ga = None
@@ -466,6 +469,9 @@ class GAApp:
         
         self.clear_button = ttk.Button(button_frame, text="Clear", command=self._clear_results)
         self.clear_button.pack(side="left", padx=(0, 5))
+
+        self.save_csv_button = ttk.Button(button_frame, text="Save results to csv", command=self._save_results_to_csv)
+        self.save_csv_button.pack(side="left", padx=5)
         
         # Save/Load buttons
         ttk.Button(button_frame, text="Save Config", command=self._save_config).pack(side="left", padx=(0, 5))
@@ -500,6 +506,30 @@ class GAApp:
     def _setup_layout(self):
         """Setup the layout and initial state."""
         self._clear_results()
+
+    def _save_results_to_csv(self):
+        """Saves the current generation results to a CSV file."""
+        if not self.saved_results:
+            messagebox.showwarning("No Data", "No results to save — please run the algorithm first.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV File", "*.csv")],
+            title="Save results as..."
+        )
+
+        if not file_path:
+            return  # user cancelled
+
+        try:
+            with open(file_path, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=["generation", "best_fitness", "mean_fitness", "std_dev"])
+                writer.writeheader()
+                writer.writerows(self.saved_results)
+            messagebox.showinfo("Saved", f"Results saved to file:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("Save Error", f"Failed to save results:\n{e}")
     
     def _run_ga(self):
         """Run the genetic algorithm in a separate thread."""
@@ -558,6 +588,13 @@ class GAApp:
                         if not self.is_running:
                             return
                             
+                        # Save results to variable
+                        self.saved_results.append({
+                            "generation": result.generation,
+                            "best_fitness": result.best_fitness,
+                            "mean_fitness": result.average_fitness,
+                            "std_dev": result.std_fitness
+                        })
                         # Update progress in GUI thread
                         self.root.after(0, self._update_progress, result)
                     
