@@ -672,6 +672,7 @@ class GAApp:
         self.run_button.configure(state="normal")
         self.stop_button.configure(state="disabled")
         self.progress_var.set("Stopped")
+        self.saved_results = []
     
     def _clear_results(self):
         """Clear all results and plots."""
