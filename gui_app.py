@@ -9,14 +9,13 @@ with real-time plotting and execution time monitoring.
 import csv
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import numpy as np
 import threading
 import time
 import json
-from typing import Callable, Optional, Dict, Any
+from typing import Callable, Dict
 import sys
 import os
 # Add src directory to path

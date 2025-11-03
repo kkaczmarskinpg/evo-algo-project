@@ -7,8 +7,7 @@ This module implements population management including initialization,
 elitism strategy, and population statistics.
 """
 
-import random
-from typing import List, Tuple, Callable
+from typing import List, Callable
 from chromosome import Chromosome, Individual
 from config import GAConfig
 

@@ -10,8 +10,7 @@ This module implements various selection methods for genetic algorithms:
 """
 
 import random
-import numpy as np
-from typing import List, Tuple
+from typing import List
 from chromosome import Individual
 from config import GAConfig, SelectionMethod
 

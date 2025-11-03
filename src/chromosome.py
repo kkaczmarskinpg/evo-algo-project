@@ -8,9 +8,7 @@ with configurable precision and support for multiple variables.
 """
 
 import random
-import numpy as np
-from typing import List, Tuple, Union
-import math
+from typing import List, Tuple
 
 
 class Chromosome:

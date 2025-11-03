@@ -18,7 +18,7 @@ from typing import List, Callable, Dict, Any, Optional
 from dataclasses import dataclass
 
 # Import all components
-from chromosome import Individual, Chromosome
+from chromosome import Individual
 from config import GAConfig
 from population import Population
 from selection import SelectionOperators
