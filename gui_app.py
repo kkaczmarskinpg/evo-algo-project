@@ -524,7 +524,7 @@ class GAApp:
 
         try:
             with open(file_path, "w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=["generation", "best_fitness", "mean_fitness", "std_dev"])
+                writer = csv.DictWriter(f, fieldnames=["generation", "best_fitness", "best_individual", "mean_fitness", "std_dev"])
                 writer.writeheader()
                 writer.writerows(self.saved_results)
             messagebox.showinfo("Saved", f"Results saved to file:\n{file_path}")
@@ -592,7 +592,7 @@ class GAApp:
                         self.saved_results.append({
                             "generation": result.generation,
                             "best_fitness": result.best_fitness,
-                            "best_solution": result.best_individual,
+                            "best_individual": result.best_individual,
                             "mean_fitness": result.average_fitness,
                             "std_dev": result.std_fitness
                         })
