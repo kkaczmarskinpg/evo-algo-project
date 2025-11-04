@@ -1,0 +1,64 @@
+{
+  "population_size": 100,
+  "num_epochs": 200,
+  "chromosome_precision": 12,
+  "bounds": [
+    [
+      0.0,
+      3.14159
+    ],
+    [
+      0.0,
+      3.14159
+    ],
+    [
+      0.0,
+      3.14159
+    ],
+    [
+      0.0,
+      3.14159
+    ],
+    [
+      0.0,
+      3.14159
+    ],
+    [
+      0.0,
+      3.14159
+    ],
+    [
+      0.0,
+      3.14159
+    ],
+    [
+      0.0,
+      3.14159
+    ],
+    [
+      0.0,
+      3.14159
+    ],
+    [
+      0.0,
+      3.14159
+    ]
+  ],
+  "selection_method": "tournament",
+  "tournament_size": 3,
+  "selection_pressure": 2.0,
+  "crossover_method": "two_point",
+  "crossover_probability": 0.8,
+  "mutation_method": "two_point",
+  "mutation_probability": 0.1,
+  "inversion_probability": 0.05,
+  "elitism_enabled": true,
+  "elitism_count": 2,
+  "elitism_percentage": 0.02,
+  "use_elitism_percentage": false,
+  "function_name": "michalewicz",
+  "minimize": false,
+  "num_variables": 10,
+  "bound_min": 0.0,
+  "bound_max": 3.14159
+}
