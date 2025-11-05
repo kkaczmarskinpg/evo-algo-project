@@ -1,8 +1,7 @@
-numpy>=1.21.0
-opfunu>=1.0.0
-benchmark-functions>=1.0.0
-matplotlib>=3.5.0
-scipy>=1.7.0
-setuptools>=65.0.0
-pandas
-openpyxl
+benchmark_functions==1.1.4
+matplotlib==3.10.7
+numpy==2.3.4
+opfunu==1.0.1
+pandas==2.3.3
+scipy==1.16.3
+setuptools==80.9.0

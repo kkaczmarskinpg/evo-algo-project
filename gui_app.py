@@ -388,7 +388,7 @@ class PlotPanel:
         self.ax2.fill_between(generations, 
                              avg_fitness_array - std_fitness_array,
                              avg_fitness_array + std_fitness_array,
-                             alpha=0.3, color='green', label='±1 Standard Deviation')
+                             alpha=0.3, color='green', label='+/-1 Standard Deviation')
         self.ax2.set_title("Average Fitness and Standard Deviation vs Generation")
         self.ax2.set_xlabel("Generation")
         self.ax2.set_ylabel("Fitness Value")
@@ -501,7 +501,7 @@ class GAApp:
     def _save_results_to_csv(self):
         """Saves the current generation results to a CSV file."""
         if not self.saved_results:
-            messagebox.showwarning("No Data", "No results to save — please run the algorithm first.")
+            messagebox.showwarning("No Data", "No results to save - please run the algorithm first.")
             return
 
         file_path = filedialog.asksaveasfilename(

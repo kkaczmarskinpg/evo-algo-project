@@ -1,16 +1,16 @@
 import pandas as pd
 import os
 
-# Ścieżka do folderu z wynikami
+# Sciezka do folderu z wynikami
 extract_path = "wyniki_max"
 
-# Lista folderów funkcji (stała)
+# Lista folderow funkcji (stala)
 functions = ["f16_2014_10", "f16_2014_20", "f16_2014_30", "michalewicz10", "michalewicz20", "michalewicz30"]
 
 # Wyniki zbiorcze
 summary_data = []
 
-# Przejście po wszystkich konfiguracjach
+# Przejscie po wszystkich konfiguracjach
 for config_name in os.listdir(extract_path):
     config_path = os.path.join(extract_path, config_name)
     if not os.path.isdir(config_path):
@@ -18,7 +18,7 @@ for config_name in os.listdir(extract_path):
 
     result_row = {"config": config_name}
 
-    # Dla każdej funkcji
+    # Dla kazdej funkcji
     for func in functions:
         func_path = os.path.join(config_path, func)
         if not os.path.isdir(func_path):
@@ -26,7 +26,7 @@ for config_name in os.listdir(extract_path):
 
         best_values = []
 
-        # Przejście po plikach CSV w danej funkcji
+        # Przejscie po plikach CSV w danej funkcji
         for file in os.listdir(func_path):
             if file.endswith(".csv"):
                 file_path = os.path.join(func_path, file)
@@ -36,15 +36,15 @@ for config_name in os.listdir(extract_path):
                         best_value = df["best_fitness"].min()
                         best_values.append(best_value)
                 except Exception as e:
-                    print(f"Błąd w pliku {file_path}: {e}")
+                    print(f"Blad w pliku {file_path}: {e}")
 
-        # Jeśli znaleziono dane
+        # Jesli znaleziono dane
         if best_values:
             result_row[f"{func}_min"] = min(best_values)
             result_row[f"{func}_max"] = max(best_values)
             result_row[f"{func}_avg"] = sum(best_values) / len(best_values)
         else:
-            # Jeśli brak danych, wstaw NaN
+            # Jesli brak danych, wstaw NaN
             result_row[f"{func}_min"] = None
             result_row[f"{func}_max"] = None
             result_row[f"{func}_avg"] = None
