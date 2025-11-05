@@ -1,15 +1,3 @@
-"""
-Crossover Operators Module
-Author: kkaczmarski
-Date: October 25, 2025
-
-This module implements various crossover operators for genetic algorithms:
-- One-point crossover
-- Two-point crossover  
-- Uniform crossover
-- Discrete (arithmetic) crossover
-"""
-
 import random
 from typing import List, Tuple
 from chromosome import Individual

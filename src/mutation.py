@@ -1,14 +1,3 @@
-"""
-Mutation Operators Module
-Author: kkaczmarski
-Date: October 25, 2025
-
-This module implements various mutation operators for genetic algorithms:
-- Boundary mutation
-- One-point mutation
-- Two-point mutation
-"""
-
 import random
 from typing import List
 from chromosome import Individual

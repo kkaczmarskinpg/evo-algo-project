@@ -1,12 +1,3 @@
-"""
-Genetic Algorithm Framework - Chromosome Implementation
-Author: kkaczmarski
-Date: October 25, 2025
-
-This module implements a binary chromosome representation for genetic algorithms
-with configurable precision and support for multiple variables.
-"""
-
 import random
 from typing import List, Tuple
 

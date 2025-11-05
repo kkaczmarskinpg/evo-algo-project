@@ -1,12 +1,3 @@
-"""
-Population Management Module
-Author: kkaczmarski
-Date: October 25, 2025
-
-This module implements population management including initialization,
-elitism strategy, and population statistics.
-"""
-
 from typing import List, Callable
 from chromosome import Chromosome, Individual
 from config import GAConfig

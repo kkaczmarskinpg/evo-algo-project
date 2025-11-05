@@ -1,11 +1,3 @@
-"""
-Genetic Algorithm Configuration Module
-Author: kkaczmarski
-Date: October 25, 2025
-
-This module defines configuration classes for the genetic algorithm parameters.
-"""
-
 from typing import Dict, Any, List, Tuple
 from enum import Enum
 

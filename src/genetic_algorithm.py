@@ -1,17 +1,3 @@
-"""
-Main Genetic Algorithm Implementation
-Author: kkaczmarski
-Date: October 25, 2025
-
-This module implements the main genetic algorithm class that combines all components:
-- Population initialization and management
-- Selection methods
-- Crossover operators
-- Mutation operators
-- Inversion operator
-- Elitism strategy
-"""
-
 import time
 import random
 from typing import List, Callable, Dict, Any, Optional

@@ -1,11 +1,3 @@
-"""
-Minimal GUI Application for Genetic Algorithm Framework
-Author: kkaczmarski
-Date: October 25, 2025
-
-A simple tkinter-based GUI for configuring and running genetic algorithms
-with real-time plotting and execution time monitoring.
-"""
 import csv
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog

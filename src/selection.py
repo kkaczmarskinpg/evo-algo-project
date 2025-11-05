@@ -1,14 +1,3 @@
-"""
-Selection Methods Module
-Author: kkaczmarski
-Date: October 25, 2025
-
-This module implements various selection methods for genetic algorithms:
-- Best selection (elite selection)
-- Roulette wheel selection
-- Tournament selection
-"""
-
 import random
 from typing import List
 from chromosome import Individual
