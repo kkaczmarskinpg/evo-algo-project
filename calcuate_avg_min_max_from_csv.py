@@ -2,10 +2,10 @@ import pandas as pd
 import os
 
 # Sciezka do folderu z wynikami
-extract_path = "wyniki_max"
+extract_path = "wyniki_min"
 
 # Lista folderow funkcji (stala)
-functions = ["f16_2014_10", "f16_2014_20", "f16_2014_30", "michalewicz10", "michalewicz20", "michalewicz30"]
+functions = ["f162014_10", "f162014_20", "f162014_30", "michalewicz2", "michalewicz5", "michalewicz10"]
 
 # Wyniki zbiorcze
 summary_data = []
