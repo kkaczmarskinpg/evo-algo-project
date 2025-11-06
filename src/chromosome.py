@@ -147,36 +147,3 @@ class Individual:
     def __str__(self) -> str:
         """String representation of individual."""
         return f"Individual(fitness={self.fitness}, values={self.chromosome.decode()})"
-
-
-if __name__ == "__main__":
-    # Test chromosome implementation
-    bounds = [(-5.0, 5.0), (-10.0, 10.0), (0.0, 1.0)]
-    precision = 8
-    
-    print("Testing Chromosome Implementation:")
-    print("=" * 50)
-    
-    # Create and test chromosome
-    chromosome = Chromosome(bounds, precision)
-    print(f"Original chromosome: {chromosome}")
-    print(f"Chromosome length: {len(chromosome)}")
-    
-    # Test encoding/decoding
-    test_values = [2.5, -3.7, 0.8]
-    print(f"\nEncoding values: {test_values}")
-    chromosome.encode(test_values)
-    decoded = chromosome.decode()
-    print(f"Decoded values: {decoded}")
-    
-    # Test individual
-    print(f"\nTesting Individual:")
-    individual = Individual(chromosome)
-    
-    # Simple test function (sphere function)
-    def sphere_function(x):
-        return sum(xi**2 for xi in x)
-    
-    fitness = individual.evaluate(sphere_function)
-    print(f"Individual: {individual}")
-    print(f"Fitness: {fitness}")

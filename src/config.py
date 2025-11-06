@@ -268,30 +268,3 @@ class GAConfig:
             else:
                 config_str += f" ({self.elitism_count} individuals)"
         return config_str
-
-
-if __name__ == "__main__":
-    # Test configuration
-    print("Testing GA Configuration:")
-    print("=" * 50)
-    
-    # Create default configuration
-    config = GAConfig()
-    print(config)
-    
-    print("\nTesting configuration methods:")
-    
-    # Test setting parameters
-    config.set_population_size(200)
-    config.set_num_epochs(1000)
-    config.set_bounds([(-10, 10), (-5, 5), (0, 1)])
-    config.set_crossover_config(CrossoverMethod.TWO_POINT, 0.9)
-    config.set_elitism_config(enabled=True, percentage=0.05)
-    
-    print(config)
-    
-    print(f"\nElite count: {config.get_elitism_count()}")
-    
-    # Test dictionary conversion
-    config_dict = config.to_dict()
-    print(f"\nConfig as dictionary: {config_dict}")
