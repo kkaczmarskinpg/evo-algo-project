@@ -109,18 +109,23 @@ class Chromosome:
 class Individual:
     """
     Individual in the population containing chromosome and fitness value.
+    Supports both binary and real-valued chromosomes.
     """
     
-    def __init__(self, chromosome: Chromosome):
+    def __init__(self, chromosome, objective_function=None):
         """
         Initialize individual with chromosome.
         
         Args:
-            chromosome: Chromosome instance
+            chromosome: Chromosome instance (binary or real-valued)
+            objective_function: Optional objective function for immediate evaluation
         """
         self.chromosome = chromosome
         self.fitness = None
         self.objective_value = None
+        
+        if objective_function is not None:
+            self.evaluate(objective_function)
         
     def evaluate(self, objective_function) -> float:
         """
@@ -146,4 +151,5 @@ class Individual:
     
     def __str__(self) -> str:
         """String representation of individual."""
-        return f"Individual(fitness={self.fitness}, values={self.chromosome.decode()})"
+        chromosome_type = "Real" if hasattr(self.chromosome, 'genes') and isinstance(self.chromosome.genes[0] if self.chromosome.genes else 0, float) else "Binary"
+        return f"Individual({chromosome_type}, fitness={self.fitness}, values={self.chromosome.decode()})"

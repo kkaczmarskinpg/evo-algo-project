@@ -1,14 +1,86 @@
 import random
 from typing import List, Tuple
 from chromosome import Individual
-from config import GAConfig, CrossoverMethod
+from config import GAConfig, CrossoverMethod, ChromosomeType
+from real_crossover import RealCrossover
 
 
 class CrossoverOperators:
     """
     Collection of crossover operators for genetic algorithms.
+    Supports both binary and real-valued chromosome representations.
     """
     
+    @staticmethod
+    def perform_crossover(parent1: Individual, parent2: Individual, config: GAConfig) -> Tuple[Individual, Individual]:
+        """
+        Perform crossover based on configuration.
+        
+        Args:
+            parent1: First parent individual
+            parent2: Second parent individual
+            config: GA configuration containing crossover method and parameters
+            
+        Returns:
+            Tuple of two offspring individuals
+        """
+        chromosome_type = getattr(config, 'chromosome_type', ChromosomeType.BINARY)
+        
+        if chromosome_type == ChromosomeType.REAL:
+            return CrossoverOperators._real_crossover(parent1, parent2, config)
+        else:
+            return CrossoverOperators._binary_crossover(parent1, parent2, config)
+    
+    @staticmethod
+    def _binary_crossover(parent1: Individual, parent2: Individual, config: GAConfig) -> Tuple[Individual, Individual]:
+        """Perform binary crossover operations."""
+        method = config.crossover_method
+        
+        if method == CrossoverMethod.ONE_POINT:
+            return CrossoverOperators.one_point_crossover(parent1, parent2)
+        elif method == CrossoverMethod.TWO_POINT:
+            return CrossoverOperators.two_point_crossover(parent1, parent2)
+        elif method == CrossoverMethod.UNIFORM:
+            return CrossoverOperators.uniform_crossover(parent1, parent2)
+        elif method == CrossoverMethod.DISCRETE:
+            return CrossoverOperators.discrete_crossover(parent1, parent2)
+        else:
+            raise ValueError(f"Unknown binary crossover method: {method}")
+    
+    @staticmethod 
+    def _real_crossover(parent1: Individual, parent2: Individual, config: GAConfig) -> Tuple[Individual, Individual]:
+        """Perform real-valued crossover operations."""
+        method = config.crossover_method
+        
+        # Extract real chromosomes
+        real_chrom1 = parent1.chromosome
+        real_chrom2 = parent2.chromosome
+        
+        # Perform crossover
+        if method == CrossoverMethod.ARITHMETIC:
+            offspring_chrom1, offspring_chrom2 = RealCrossover.arithmetic_crossover(
+                real_chrom1, real_chrom2, config.alpha)
+        elif method == CrossoverMethod.LINEAR:
+            offspring_chrom1, offspring_chrom2 = RealCrossover.linear_crossover(
+                real_chrom1, real_chrom2)
+        elif method == CrossoverMethod.BLEND_ALPHA:
+            offspring_chrom1, offspring_chrom2 = RealCrossover.blend_alpha_crossover(
+                real_chrom1, real_chrom2, config.alpha)
+        elif method == CrossoverMethod.BLEND_ALPHA_BETA:
+            offspring_chrom1, offspring_chrom2 = RealCrossover.blend_alpha_beta_crossover(
+                real_chrom1, real_chrom2, config.alpha, config.beta)
+        elif method == CrossoverMethod.AVERAGING:
+            offspring_chrom1, offspring_chrom2 = RealCrossover.averaging_crossover(
+                real_chrom1, real_chrom2)
+        else:
+            raise ValueError(f"Unknown real crossover method: {method}")
+        
+        # Create new individuals
+        offspring1 = Individual(offspring_chrom1, None)  # fitness will be calculated later
+        offspring2 = Individual(offspring_chrom2, None)
+        
+        return offspring1, offspring2
+
     @staticmethod
     def one_point_crossover(parent1: Individual, parent2: Individual) -> Tuple[Individual, Individual]:
         """
@@ -187,20 +259,7 @@ class CrossoverOperators:
         Returns:
             Tuple of two offspring individuals
         """
-        if config.crossover_method == CrossoverMethod.ONE_POINT:
-            return CrossoverOperators.one_point_crossover(parent1, parent2)
-        
-        elif config.crossover_method == CrossoverMethod.TWO_POINT:
-            return CrossoverOperators.two_point_crossover(parent1, parent2)
-        
-        elif config.crossover_method == CrossoverMethod.UNIFORM:
-            return CrossoverOperators.uniform_crossover(parent1, parent2)
-        
-        elif config.crossover_method == CrossoverMethod.DISCRETE:
-            return CrossoverOperators.discrete_crossover(parent1, parent2)
-        
-        else:
-            raise ValueError(f"Unknown crossover method: {config.crossover_method}")
+        return CrossoverOperators.perform_crossover(parent1, parent2, config)
     
     @staticmethod
     def apply_crossover(parents: List[Individual], config: GAConfig) -> List[Individual]:

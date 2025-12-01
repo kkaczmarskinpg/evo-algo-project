@@ -2,6 +2,12 @@ from typing import Dict, Any, List, Tuple
 from enum import Enum
 
 
+class ChromosomeType(Enum):
+    """Types of chromosome representation."""
+    BINARY = "binary"
+    REAL = "real"
+
+
 class SelectionMethod(Enum):
     """Selection methods available in the genetic algorithm."""
     BEST = "best"
@@ -11,17 +17,30 @@ class SelectionMethod(Enum):
 
 class CrossoverMethod(Enum):
     """Crossover methods available in the genetic algorithm."""
+    # Binary crossover methods
     ONE_POINT = "one_point"
     TWO_POINT = "two_point"
     UNIFORM = "uniform"
     DISCRETE = "discrete"
+    
+    # Real-valued crossover methods
+    ARITHMETIC = "arithmetic"
+    LINEAR = "linear"
+    BLEND_ALPHA = "blend_alpha"
+    BLEND_ALPHA_BETA = "blend_alpha_beta"
+    AVERAGING = "averaging"
 
 
 class MutationMethod(Enum):
     """Mutation methods available in the genetic algorithm."""
+    # Binary mutation methods
     BOUNDARY = "boundary"
     ONE_POINT = "one_point"
     TWO_POINT = "two_point"
+    
+    # Real-valued mutation methods
+    UNIFORM = "uniform"
+    GAUSSIAN = "gaussian"
 
 
 class GAConfig:
@@ -35,6 +54,9 @@ class GAConfig:
     
     def __init__(self):
         """Initialize GA configuration with default values."""
+        
+        # Chromosome type configuration
+        self.chromosome_type: ChromosomeType = ChromosomeType.BINARY
         
         # Basic algorithm parameters
         self.population_size: int = 100
@@ -53,9 +75,17 @@ class GAConfig:
         self.crossover_method: CrossoverMethod = CrossoverMethod.ONE_POINT
         self.crossover_probability: float = 0.8
         
+        # Real-valued crossover parameters
+        self.alpha: float = 0.5  # For blend crossover methods
+        self.beta: float = 0.5   # For blend alpha-beta crossover
+        
         # Mutation configuration
         self.mutation_method: MutationMethod = MutationMethod.ONE_POINT
         self.mutation_probability: float = 0.1
+        
+        # Real-valued mutation parameters
+        self.mutation_strength: float = 0.1  # For uniform and gaussian mutation
+        self.gaussian_std: float = 0.1       # Standard deviation for gaussian mutation
         
         # Inversion operator configuration
         self.inversion_probability: float = 0.05
@@ -190,6 +220,58 @@ class GAConfig:
             self.elitism_percentage = percentage
             self.use_elitism_percentage = True
             
+    def set_elitism_percentage(self, percentage: float, use_percentage: bool = True) -> None:
+        """
+        Set elitism as percentage of population.
+        
+        Args:
+            percentage: Percentage of population to keep as elite (0.0 to 1.0)
+            use_percentage: Whether to use percentage instead of count
+        """
+        if not 0.0 <= percentage <= 1.0:
+            raise ValueError("Elitism percentage must be between 0.0 and 1.0")
+        self.elitism_percentage = percentage
+        self.use_elitism_percentage = use_percentage
+    
+    def set_chromosome_type(self, chromosome_type: ChromosomeType) -> None:
+        """
+        Set chromosome representation type.
+        
+        Args:
+            chromosome_type: Type of chromosome representation
+        """
+        self.chromosome_type = chromosome_type
+    
+    def set_real_crossover_params(self, alpha: float = 0.5, beta: float = 0.5) -> None:
+        """
+        Set parameters for real-valued crossover operators.
+        
+        Args:
+            alpha: Alpha parameter for blend crossover methods
+            beta: Beta parameter for blend alpha-beta crossover
+        """
+        if not 0.0 <= alpha <= 1.0:
+            raise ValueError("Alpha must be between 0.0 and 1.0")
+        if not 0.0 <= beta <= 1.0:
+            raise ValueError("Beta must be between 0.0 and 1.0")
+        self.alpha = alpha
+        self.beta = beta
+    
+    def set_real_mutation_params(self, mutation_strength: float = 0.1, gaussian_std: float = 0.1) -> None:
+        """
+        Set parameters for real-valued mutation operators.
+        
+        Args:
+            mutation_strength: Mutation strength for uniform mutation
+            gaussian_std: Standard deviation for gaussian mutation
+        """
+        if mutation_strength < 0.0:
+            raise ValueError("Mutation strength must be non-negative")
+        if gaussian_std < 0.0:
+            raise ValueError("Gaussian standard deviation must be non-negative")
+        self.mutation_strength = mutation_strength
+        self.gaussian_std = gaussian_std
+        
     def get_elitism_count(self) -> int:
         """
         Get the actual number of elite individuals based on configuration.
@@ -213,6 +295,7 @@ class GAConfig:
             Dictionary representation of configuration
         """
         return {
+            'chromosome_type': self.chromosome_type.value,
             'population_size': self.population_size,
             'num_epochs': self.num_epochs,
             'chromosome_precision': self.chromosome_precision,
@@ -222,8 +305,12 @@ class GAConfig:
             'selection_pressure': self.selection_pressure,
             'crossover_method': self.crossover_method.value,
             'crossover_probability': self.crossover_probability,
+            'alpha': self.alpha,
+            'beta': self.beta,
             'mutation_method': self.mutation_method.value,
             'mutation_probability': self.mutation_probability,
+            'mutation_strength': self.mutation_strength,
+            'gaussian_std': self.gaussian_std,
             'inversion_probability': self.inversion_probability,
             'elitism_enabled': self.elitism_enabled,
             'elitism_count': self.elitism_count,
@@ -240,7 +327,9 @@ class GAConfig:
         """
         for key, value in config_dict.items():
             if hasattr(self, key):
-                if key == 'selection_method':
+                if key == 'chromosome_type':
+                    setattr(self, key, ChromosomeType(value))
+                elif key == 'selection_method':
                     setattr(self, key, SelectionMethod(value))
                 elif key == 'crossover_method':
                     setattr(self, key, CrossoverMethod(value))

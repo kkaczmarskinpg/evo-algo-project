@@ -1,13 +1,73 @@
 import random
 from typing import List
 from chromosome import Individual
-from config import GAConfig, MutationMethod
+from config import GAConfig, MutationMethod, ChromosomeType
 
 
 class MutationOperators:
     """
     Collection of mutation operators for genetic algorithms.
+    Supports both binary and real-valued chromosome representations.
     """
+    
+    @staticmethod
+    def perform_mutation(individual: Individual, config: GAConfig) -> Individual:
+        """
+        Perform mutation based on configuration.
+        
+        Args:
+            individual: Individual to mutate
+            config: GA configuration containing mutation method and parameters
+            
+        Returns:
+            Mutated individual
+        """
+        chromosome_type = getattr(config, 'chromosome_type', ChromosomeType.BINARY)
+        
+        if chromosome_type == ChromosomeType.REAL:
+            return MutationOperators._real_mutation(individual, config)
+        else:
+            return MutationOperators._binary_mutation(individual, config)
+    
+    @staticmethod
+    def _binary_mutation(individual: Individual, config: GAConfig) -> Individual:
+        """Perform binary mutation operations."""
+        method = config.mutation_method
+        
+        if method == MutationMethod.BOUNDARY:
+            return MutationOperators.boundary_mutation(individual)
+        elif method == MutationMethod.ONE_POINT:
+            return MutationOperators.one_point_mutation(individual)
+        elif method == MutationMethod.TWO_POINT:
+            return MutationOperators.two_point_mutation(individual)
+        else:
+            raise ValueError(f"Unknown binary mutation method: {method}")
+    
+    @staticmethod
+    def _real_mutation(individual: Individual, config: GAConfig) -> Individual:
+        """Perform real-valued mutation operations."""
+        mutated = individual.copy()
+        method = config.mutation_method
+        probability = config.mutation_probability
+        
+        if method == MutationMethod.UNIFORM:
+            mutated.chromosome.mutate_uniform(
+                probability, 
+                getattr(config, 'mutation_strength', 0.1)
+            )
+        elif method == MutationMethod.GAUSSIAN:
+            mutated.chromosome.mutate_gaussian(
+                probability,
+                getattr(config, 'gaussian_std', 0.1)
+            )
+        else:
+            raise ValueError(f"Unknown real mutation method: {method}")
+        
+        # Reset fitness
+        mutated.fitness = None
+        mutated.objective_value = None
+        
+        return mutated
     
     @staticmethod
     def boundary_mutation(individual: Individual) -> Individual:
@@ -113,17 +173,7 @@ class MutationOperators:
         Returns:
             Mutated individual
         """
-        if config.mutation_method == MutationMethod.BOUNDARY:
-            return MutationOperators.boundary_mutation(individual)
-        
-        elif config.mutation_method == MutationMethod.ONE_POINT:
-            return MutationOperators.one_point_mutation(individual)
-        
-        elif config.mutation_method == MutationMethod.TWO_POINT:
-            return MutationOperators.two_point_mutation(individual)
-        
-        else:
-            raise ValueError(f"Unknown mutation method: {config.mutation_method}")
+        return MutationOperators.perform_mutation(individual, config)
     
     @staticmethod
     def apply_mutation(population: List[Individual], config: GAConfig) -> List[Individual]:

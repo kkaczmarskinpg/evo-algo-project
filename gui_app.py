@@ -15,7 +15,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 # Import GA components
 from genetic_algorithm import GeneticAlgorithm, GenerationResult
-from config import GAConfig, SelectionMethod, CrossoverMethod, MutationMethod
+from config import GAConfig, SelectionMethod, CrossoverMethod, MutationMethod, ChromosomeType
 # Import test functions
 from benchmark_functions import Michalewicz, Ackley
 from opfunu.cec_based.cec2014 import F162014, F52014
@@ -94,6 +94,7 @@ class GAConfigPanel:
         
         # Configuration variables
         self.config_vars = {
+            'chromosome_type': tk.StringVar(value="binary"),
             'population_size': tk.IntVar(value=100),
             'num_epochs': tk.IntVar(value=200),
             'chromosome_precision': tk.IntVar(value=12),
@@ -101,8 +102,12 @@ class GAConfigPanel:
             'tournament_size': tk.IntVar(value=3),
             'crossover_method': tk.StringVar(value="one_point"),
             'crossover_probability': tk.DoubleVar(value=0.8),
+            'alpha': tk.DoubleVar(value=0.5),
+            'beta': tk.DoubleVar(value=0.5),
             'mutation_method': tk.StringVar(value="one_point"),
             'mutation_probability': tk.DoubleVar(value=0.1),
+            'mutation_strength': tk.DoubleVar(value=0.1),
+            'gaussian_std': tk.DoubleVar(value=0.1),
             'inversion_probability': tk.DoubleVar(value=0.05),
             'elitism_enabled': tk.BooleanVar(value=True),
             'elitism_count': tk.IntVar(value=2),
@@ -142,8 +147,75 @@ class GAConfigPanel:
             self.config_vars['bound_min'].set(-100.0)
             self.config_vars['bound_max'].set(100.0)
     
+    def _on_chromosome_type_change(self, event=None):
+        """Handle chromosome type change to show/hide appropriate options."""
+        chromosome_type = self.config_vars['chromosome_type'].get()
+        
+        # Update crossover and mutation method options based on chromosome type
+        if chromosome_type == "real":
+            # Update crossover methods for real chromosomes
+            crossover_values = ["arithmetic", "linear", "blend_alpha", "blend_alpha_beta", "averaging"]
+            mutation_values = ["uniform", "gaussian"]
+        else:
+            # Binary chromosome methods
+            crossover_values = ["one_point", "two_point", "uniform", "discrete"]
+            mutation_values = ["boundary", "one_point", "two_point"]
+        
+        # Update combobox values if they exist
+        if hasattr(self, 'crossover_combo'):
+            self.crossover_combo['values'] = crossover_values
+            if self.config_vars['crossover_method'].get() not in crossover_values:
+                self.config_vars['crossover_method'].set(crossover_values[0])
+        
+        if hasattr(self, 'mutation_combo'):
+            self.mutation_combo['values'] = mutation_values
+            if self.config_vars['mutation_method'].get() not in mutation_values:
+                self.config_vars['mutation_method'].set(mutation_values[0])
+        
+        # Show/hide parameter fields
+        self._update_parameter_visibility()
+    
+    def _update_parameter_visibility(self):
+        """Show/hide parameter fields based on chromosome type."""
+        chromosome_type = self.config_vars['chromosome_type'].get()
+        
+        # Hide/show precision field (only for binary)
+        if hasattr(self, 'precision_frame'):
+            if chromosome_type == "binary":
+                self.precision_frame.grid()
+            else:
+                self.precision_frame.grid_remove()
+        
+        # Hide/show real-valued crossover parameters
+        if hasattr(self, 'real_params_frame'):
+            if chromosome_type == "real":
+                self.real_params_frame.grid()
+            else:
+                self.real_params_frame.grid_remove()
+        
+        # Hide/show real-valued mutation parameters
+        if hasattr(self, 'mutation_params_frame'):
+            if chromosome_type == "real":
+                self.mutation_params_frame.grid()
+            else:
+                self.mutation_params_frame.grid_remove()
+                
     def _create_widgets(self):
         row = 0
+        
+        # Chromosome type selection
+        ttk.Label(self.frame, text="Chromosome Type").grid(row=row, column=0, columnspan=2, sticky="w", pady=(0, 5))
+        row += 1
+        
+        ttk.Label(self.frame, text="Representation:").grid(row=row, column=0, sticky="w")
+        chromosome_combo = ttk.Combobox(self.frame, textvariable=self.config_vars['chromosome_type'],
+                                       values=["binary", "real"], state="readonly", width=12)
+        chromosome_combo.grid(row=row, column=1, sticky="w")
+        chromosome_combo.bind('<<ComboboxSelected>>', self._on_chromosome_type_change)
+        row += 1
+        
+        ttk.Separator(self.frame, orient="horizontal").grid(row=row, column=0, columnspan=2, sticky="ew", pady=5)
+        row += 1
         
         # Basic parameters
         ttk.Label(self.frame, text="Basic Parameters").grid(row=row, column=0, columnspan=2, sticky="w", pady=(0, 5))
@@ -157,8 +229,11 @@ class GAConfigPanel:
         ttk.Entry(self.frame, textvariable=self.config_vars['num_epochs'], width=10).grid(row=row, column=1, sticky="w")
         row += 1
         
-        ttk.Label(self.frame, text="Precision:").grid(row=row, column=0, sticky="w")
-        ttk.Entry(self.frame, textvariable=self.config_vars['chromosome_precision'], width=10).grid(row=row, column=1, sticky="w")
+        # Precision (only for binary)
+        self.precision_frame = ttk.Frame(self.frame)
+        self.precision_frame.grid(row=row, column=0, columnspan=2, sticky="ew")
+        ttk.Label(self.precision_frame, text="Precision:").grid(row=0, column=0, sticky="w")
+        ttk.Entry(self.precision_frame, textvariable=self.config_vars['chromosome_precision'], width=10).grid(row=0, column=1, sticky="w")
         row += 1
         
         # Problem definition
@@ -219,14 +294,29 @@ class GAConfigPanel:
         row += 1
         
         ttk.Label(self.frame, text="Method:").grid(row=row, column=0, sticky="w")
-        crossover_combo = ttk.Combobox(self.frame, textvariable=self.config_vars['crossover_method'],
-                                      values=["one_point", "two_point", "uniform", "discrete"], 
-                                      state="readonly", width=12)
-        crossover_combo.grid(row=row, column=1, sticky="w")
+        self.crossover_combo = ttk.Combobox(self.frame, textvariable=self.config_vars['crossover_method'],
+                                           values=["one_point", "two_point", "uniform", "discrete"], 
+                                           state="readonly", width=12)
+        self.crossover_combo.grid(row=row, column=1, sticky="w")
         row += 1
         
         ttk.Label(self.frame, text="Probability:").grid(row=row, column=0, sticky="w")
         ttk.Entry(self.frame, textvariable=self.config_vars['crossover_probability'], width=10).grid(row=row, column=1, sticky="w")
+        row += 1
+        
+        # Real-valued crossover parameters
+        self.real_params_frame = ttk.Frame(self.frame)
+        self.real_params_frame.grid(row=row, column=0, columnspan=2, sticky="ew")
+        
+        param_row = 0
+        ttk.Label(self.real_params_frame, text="Alpha:").grid(row=param_row, column=0, sticky="w")
+        ttk.Entry(self.real_params_frame, textvariable=self.config_vars['alpha'], width=10).grid(row=param_row, column=1, sticky="w")
+        param_row += 1
+        
+        ttk.Label(self.real_params_frame, text="Beta:").grid(row=param_row, column=0, sticky="w")
+        ttk.Entry(self.real_params_frame, textvariable=self.config_vars['beta'], width=10).grid(row=param_row, column=1, sticky="w")
+        param_row += 1
+        
         row += 1
         
         # Mutation
@@ -237,14 +327,29 @@ class GAConfigPanel:
         row += 1
         
         ttk.Label(self.frame, text="Method:").grid(row=row, column=0, sticky="w")
-        mutation_combo = ttk.Combobox(self.frame, textvariable=self.config_vars['mutation_method'],
-                                     values=["boundary", "one_point", "two_point"], 
-                                     state="readonly", width=12)
-        mutation_combo.grid(row=row, column=1, sticky="w")
+        self.mutation_combo = ttk.Combobox(self.frame, textvariable=self.config_vars['mutation_method'],
+                                          values=["boundary", "one_point", "two_point"], 
+                                          state="readonly", width=12)
+        self.mutation_combo.grid(row=row, column=1, sticky="w")
         row += 1
         
         ttk.Label(self.frame, text="Probability:").grid(row=row, column=0, sticky="w")
         ttk.Entry(self.frame, textvariable=self.config_vars['mutation_probability'], width=10).grid(row=row, column=1, sticky="w")
+        row += 1
+        
+        # Real-valued mutation parameters  
+        self.mutation_params_frame = ttk.Frame(self.frame)
+        self.mutation_params_frame.grid(row=row, column=0, columnspan=2, sticky="ew")
+        
+        mut_param_row = 0
+        ttk.Label(self.mutation_params_frame, text="Strength:").grid(row=mut_param_row, column=0, sticky="w")
+        ttk.Entry(self.mutation_params_frame, textvariable=self.config_vars['mutation_strength'], width=10).grid(row=mut_param_row, column=1, sticky="w")
+        mut_param_row += 1
+        
+        ttk.Label(self.mutation_params_frame, text="Gaussian σ:").grid(row=mut_param_row, column=0, sticky="w")
+        ttk.Entry(self.mutation_params_frame, textvariable=self.config_vars['gaussian_std'], width=10).grid(row=mut_param_row, column=1, sticky="w")
+        mut_param_row += 1
+        
         row += 1
         
         ttk.Label(self.frame, text="Inversion Prob:").grid(row=row, column=0, sticky="w")
@@ -264,6 +369,9 @@ class GAConfigPanel:
         ttk.Label(self.frame, text="Count:").grid(row=row, column=0, sticky="w")
         ttk.Entry(self.frame, textvariable=self.config_vars['elitism_count'], width=10).grid(row=row, column=1, sticky="w")
         row += 1
+        
+        # Update visibility based on initial chromosome type
+        self._update_parameter_visibility()
     
     def get_config(self) -> GAConfig:
         """Get GAConfig object from current settings."""
@@ -273,6 +381,11 @@ class GAConfigPanel:
         config.set_population_size(self.config_vars['population_size'].get())
         config.set_num_epochs(self.config_vars['num_epochs'].get())
         config.set_chromosome_precision(self.config_vars['chromosome_precision'].get())
+        
+        # Set chromosome type
+        chromosome_type_str = self.config_vars['chromosome_type'].get()
+        chromosome_type = ChromosomeType.REAL if chromosome_type_str == "real" else ChromosomeType.BINARY
+        config.set_chromosome_type(chromosome_type)
         
         # Set bounds
         num_vars = self.config_vars['num_variables'].get()
@@ -289,9 +402,21 @@ class GAConfigPanel:
         crossover_method = CrossoverMethod(self.config_vars['crossover_method'].get())
         config.set_crossover_config(crossover_method, self.config_vars['crossover_probability'].get())
         
+        # Set real-valued crossover parameters
+        config.set_real_crossover_params(
+            alpha=self.config_vars['alpha'].get(),
+            beta=self.config_vars['beta'].get()
+        )
+        
         # Set mutation
         mutation_method = MutationMethod(self.config_vars['mutation_method'].get())
         config.set_mutation_config(mutation_method, self.config_vars['mutation_probability'].get())
+        
+        # Set real-valued mutation parameters
+        config.set_real_mutation_params(
+            mutation_strength=self.config_vars['mutation_strength'].get(),
+            gaussian_std=self.config_vars['gaussian_std'].get()
+        )
         
         # Set inversion
         config.set_inversion_probability(self.config_vars['inversion_probability'].get())
@@ -332,14 +457,17 @@ class PlotPanel:
     def __init__(self, parent):
         self.frame = ttk.LabelFrame(parent, text="Convergence Plots", padding="5")
         
-        # Create matplotlib figure
-        self.fig = Figure(figsize=(12, 8))
+        # Create matplotlib figure with better size management
+        self.fig = Figure(figsize=(10, 6), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.fig, self.frame)
-        self.canvas.get_tk_widget().pack(fill="both", expand=True)
+        self.canvas.get_tk_widget().pack(fill="both", expand=True, padx=2, pady=2)
         
-        # Create subplots
+        # Create subplots with better spacing
         self.ax1 = self.fig.add_subplot(2, 1, 1)
         self.ax2 = self.fig.add_subplot(2, 1, 2)
+        
+        # Adjust subplot parameters to prevent overlap
+        self.fig.subplots_adjust(left=0.1, bottom=0.1, right=0.95, top=0.95, hspace=0.4)
         
         self.clear_plots()
         
@@ -348,17 +476,19 @@ class PlotPanel:
         self.ax1.clear()
         self.ax2.clear()
         
-        self.ax1.set_title("Best Fitness vs Generation")
-        self.ax1.set_xlabel("Generation")
-        self.ax1.set_ylabel("Fitness Value")
+        self.ax1.set_title("Best Fitness vs Generation", fontsize=10)
+        self.ax1.set_xlabel("Generation", fontsize=9)
+        self.ax1.set_ylabel("Fitness Value", fontsize=9)
         self.ax1.grid(True, alpha=0.3)
+        self.ax1.tick_params(labelsize=8)
         
-        self.ax2.set_title("Average Fitness and Standard Deviation vs Generation")
-        self.ax2.set_xlabel("Generation")
-        self.ax2.set_ylabel("Fitness Value")
+        self.ax2.set_title("Average Fitness and Standard Deviation vs Generation", fontsize=10)
+        self.ax2.set_xlabel("Generation", fontsize=9)
+        self.ax2.set_ylabel("Fitness Value", fontsize=9)
         self.ax2.grid(True, alpha=0.3)
+        self.ax2.tick_params(labelsize=8)
         
-        self.fig.tight_layout()
+        # Use constrained layout instead of tight_layout for better control
         self.canvas.draw()
     
     def update_plots(self, convergence_data: Dict):
@@ -374,11 +504,12 @@ class PlotPanel:
         
         # Plot 1: Best fitness over generations
         self.ax1.plot(generations, best_fitness, 'b-', linewidth=2, label='Best Fitness')
-        self.ax1.set_title("Best Fitness vs Generation")
-        self.ax1.set_xlabel("Generation")
-        self.ax1.set_ylabel("Fitness Value")
+        self.ax1.set_title("Best Fitness vs Generation", fontsize=10)
+        self.ax1.set_xlabel("Generation", fontsize=9)
+        self.ax1.set_ylabel("Fitness Value", fontsize=9)
         self.ax1.grid(True, alpha=0.3)
-        self.ax1.legend()
+        self.ax1.legend(fontsize=8)
+        self.ax1.tick_params(labelsize=8)
         
         # Plot 2: Average fitness and standard deviation
         avg_fitness_array = np.array(avg_fitness)
@@ -389,13 +520,14 @@ class PlotPanel:
                              avg_fitness_array - std_fitness_array,
                              avg_fitness_array + std_fitness_array,
                              alpha=0.3, color='green', label='+/-1 Standard Deviation')
-        self.ax2.set_title("Average Fitness and Standard Deviation vs Generation")
-        self.ax2.set_xlabel("Generation")
-        self.ax2.set_ylabel("Fitness Value")
+        self.ax2.set_title("Average Fitness and Standard Deviation vs Generation", fontsize=10)
+        self.ax2.set_xlabel("Generation", fontsize=9)
+        self.ax2.set_ylabel("Fitness Value", fontsize=9)
         self.ax2.grid(True, alpha=0.3)
-        self.ax2.legend()
+        self.ax2.legend(fontsize=8)
+        self.ax2.tick_params(labelsize=8)
         
-        self.fig.tight_layout()
+        # Refresh the canvas
         self.canvas.draw()
 
 
@@ -404,8 +536,9 @@ class GAApp:
     
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Genetic Algorithm")
-        self.root.geometry("1400x800")
+        self.root.title("Genetic Algorithm - Binary vs Real Chromosome")
+        self.root.geometry("1600x900")
+        self.root.minsize(1200, 700)
 
         # List for Saved results
         self.saved_results = []
@@ -432,17 +565,33 @@ class GAApp:
         main_container = ttk.PanedWindow(self.root, orient="horizontal")
         main_container.pack(fill="both", expand=True, padx=5, pady=5)
         
-        # Left panel (configuration)
-        left_frame = ttk.Frame(main_container)
+        # Left panel (configuration) - fixed width
+        left_frame = ttk.Frame(main_container, width=350)
         main_container.add(left_frame, weight=1)
         
-        # Configuration panel
-        self.config_panel = GAConfigPanel(left_frame)
+        # Add scrollable area for configuration panel
+        canvas = tk.Canvas(left_frame)
+        scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Configuration panel in scrollable frame
+        self.config_panel = GAConfigPanel(scrollable_frame)
         self.config_panel.frame.pack(fill="both", expand=True, padx=(0, 5))
         
-        # Right panel (plots and controls)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Right panel (plots and controls) - expandable
         right_frame = ttk.Frame(main_container)
-        main_container.add(right_frame, weight=3)
+        main_container.add(right_frame, weight=4)
         
         # Control panel
         control_frame = ttk.LabelFrame(right_frame, text="Controls", padding="5")

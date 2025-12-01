@@ -1,11 +1,13 @@
 from typing import List, Callable
 from chromosome import Chromosome, Individual
-from config import GAConfig
+from real_chromosome import RealChromosome
+from config import GAConfig, ChromosomeType
 
 
 class Population:
     """
     Population management class for genetic algorithms.
+    Supports both binary and real-valued chromosome representations.
     """
     
     def __init__(self, config: GAConfig):
@@ -27,9 +29,14 @@ class Population:
             objective_function: Function to evaluate individuals (optional)
         """
         self.individuals = []
+        chromosome_type = getattr(self.config, 'chromosome_type', ChromosomeType.BINARY)
         
         for _ in range(self.config.population_size):
-            chromosome = Chromosome(self.config.bounds, self.config.chromosome_precision)
+            if chromosome_type == ChromosomeType.REAL:
+                chromosome = RealChromosome(self.config.bounds)
+            else:
+                chromosome = Chromosome(self.config.bounds, self.config.chromosome_precision)
+                
             individual = Individual(chromosome)
             
             if objective_function:
