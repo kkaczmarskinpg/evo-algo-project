@@ -1,0 +1,37 @@
+{
+  "chromosome_type": "real",
+  "population_size": 100,
+  "num_epochs": 200,
+  "chromosome_precision": 12,
+  "bounds": [
+    [
+      0.0,
+      3.14159
+    ],
+    [
+      0.0,
+      3.14159
+    ]
+  ],
+  "selection_method": "best",
+  "tournament_size": 3,
+  "selection_pressure": 2.0,
+  "crossover_method": "blend_alpha",
+  "crossover_probability": 0.75,
+  "alpha": 0.5,
+  "beta": 0.6,
+  "mutation_method": "gaussian",
+  "mutation_probability": 0.15,
+  "mutation_strength": 0.1,
+  "gaussian_std": 0.15,
+  "inversion_probability": 0.04,
+  "elitism_enabled": true,
+  "elitism_count": 2,
+  "elitism_percentage": 0.02,
+  "use_elitism_percentage": false,
+  "function_name": "michalewicz",
+  "minimize": true,
+  "num_variables": 2,
+  "bound_min": 0.0,
+  "bound_max": 3.14159
+}

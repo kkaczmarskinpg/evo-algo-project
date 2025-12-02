@@ -1,6 +1,6 @@
 import csv
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox, filedialog, simpledialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import numpy as np
@@ -613,6 +613,9 @@ class GAApp:
         self.save_csv_button = ttk.Button(button_frame, text="Save results to csv", command=self._save_results_to_csv)
         self.save_csv_button.pack(side="left", padx=5)
         
+        self.multi_run_button = ttk.Button(button_frame, text="Run Multiple Tests", command=self._run_multiple_tests)
+        self.multi_run_button.pack(side="left", padx=5)
+        
         # Save/Load buttons
         ttk.Button(button_frame, text="Save Config", command=self._save_config).pack(side="left", padx=(0, 5))
         ttk.Button(button_frame, text="Load Config", command=self._load_config).pack(side="left", padx=(0, 5))
@@ -648,7 +651,7 @@ class GAApp:
         self._clear_results()
 
     def _save_results_to_csv(self):
-        """Saves the current generation results to a CSV file."""
+        """Saves the current generation results to CSV, TXT, and PNG files."""
         if not self.saved_results:
             messagebox.showwarning("No Data", "No results to save - please run the algorithm first.")
             return
@@ -663,11 +666,61 @@ class GAApp:
             return  # user cancelled
 
         try:
-            with open(file_path, "w", newline="") as f:
+            # Get base filename without extension
+            base_name = file_path.rsplit('.', 1)[0] if '.' in file_path else file_path
+            csv_path = f"{base_name}.csv"
+            txt_path = f"{base_name}_results.txt"
+            png_path = f"{base_name}_plot.png"
+            
+            # Save CSV data
+            with open(csv_path, "w", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=["generation", "best_fitness", "best_individual", "mean_fitness", "std_dev"])
                 writer.writeheader()
                 writer.writerows(self.saved_results)
-            messagebox.showinfo("Saved", f"Results saved to file:\n{file_path}")
+            
+            # Save results text content
+            results_content = self.results_text.get(1.0, tk.END).strip()
+            if results_content:
+                with open(txt_path, "w", encoding="utf-8") as f:
+                    # Add header with configuration info
+                    f.write("=== GENETIC ALGORITHM RESULTS ===\n")
+                    f.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    
+                    # Add configuration details
+                    chromosome_type = self.config_panel.config_vars['chromosome_type'].get()
+                    function_name = self.config_panel.config_vars['function_name'].get()
+                    population_size = self.config_panel.config_vars['population_size'].get()
+                    num_epochs = self.config_panel.config_vars['num_epochs'].get()
+                    crossover_method = self.config_panel.config_vars['crossover_method'].get()
+                    mutation_method = self.config_panel.config_vars['mutation_method'].get()
+                    
+                    f.write(f"Chromosome Type: {chromosome_type}\n")
+                    f.write(f"Function: {function_name}\n")
+                    f.write(f"Population Size: {population_size}\n")
+                    f.write(f"Epochs: {num_epochs}\n")
+                    f.write(f"Crossover Method: {crossover_method}\n")
+                    f.write(f"Mutation Method: {mutation_method}\n")
+                    
+                    # Add execution time if available
+                    execution_time_text = self.execution_time_var.get()
+                    f.write(f"{execution_time_text}\n")
+                    
+                    f.write("="*40 + "\n\n")
+                    
+                    # Add results content
+                    f.write(results_content)
+            
+            # Save plot as PNG
+            if hasattr(self.plot_panel, 'fig'):
+                # Set high DPI for better quality
+                self.plot_panel.fig.savefig(png_path, dpi=300, bbox_inches='tight', 
+                                          facecolor='white', edgecolor='none')
+            
+            messagebox.showinfo("Saved", f"Results saved successfully:\n"
+                              f"• Data: {csv_path}\n"
+                              f"• Results: {txt_path}\n"
+                              f"• Plot: {png_path}")
+                              
         except Exception as e:
             messagebox.showerror("Save Error", f"Failed to save results:\n{e}")
     
@@ -812,6 +865,7 @@ class GAApp:
         self.is_running = False
         self.run_button.configure(state="normal")
         self.stop_button.configure(state="disabled")
+        self.multi_run_button.configure(state="normal")
         self.progress_var.set("Stopped")
         self.saved_results = []
     
@@ -830,6 +884,7 @@ class GAApp:
         self.is_running = False
         self.run_button.configure(state="normal")
         self.stop_button.configure(state="disabled")
+        self.multi_run_button.configure(state="normal")
         self.progress_var.set("Error occurred")
         messagebox.showerror("Error", f"An error occurred:\n{error_message}")
     
@@ -881,6 +936,294 @@ class GAApp:
                 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load configuration:\n{str(e)}")
+    
+    def _run_multiple_tests(self):
+        """Run multiple tests with user-specified number of runs."""
+        if self.is_running:
+            return
+        
+        # Ask user for number of runs
+        num_runs = simpledialog.askinteger(
+            "Multiple Tests",
+            "Enter the number of test runs to perform:",
+            minvalue=1,
+            maxvalue=100,
+            initialvalue=10
+        )
+        
+        if num_runs is None:
+            return  # User cancelled
+        
+        # Ask user for base filename
+        base_filename = filedialog.asksaveasfilename(
+            title="Choose base filename for multiple runs",
+            defaultextension="",
+            filetypes=[("All files", "*.*")]
+        )
+        
+        if not base_filename:
+            return  # User cancelled
+        
+        try:
+            # Get configuration and objective function once
+            config = self.config_panel.get_config()
+            objective_function = self.config_panel.get_objective_function()
+            minimize = self.config_panel.is_minimize()
+            
+            # Validate configuration
+            if config.population_size <= 0 or config.num_epochs <= 0:
+                messagebox.showerror("Error", "Population size and epochs must be positive!")
+                return
+            
+            # Validate function-specific requirements
+            function_name = self.config_panel.config_vars['function_name'].get()
+            num_variables = self.config_panel.config_vars['num_variables'].get()
+            
+            # Basic validation - all functions need at least 1 variable
+            if num_variables < 1:
+                messagebox.showerror("Error", "Number of variables must be at least 1!")
+                return
+            
+            # Function-specific validation
+            if function_name in ['michalewicz'] and num_variables < 2:
+                messagebox.showerror("Error", "Michalewicz function requires at least 2 variables!")
+                return
+            
+            # Update UI state
+            self.is_running = True
+            self.run_button.configure(state="disabled")
+            self.stop_button.configure(state="normal")
+            self.multi_run_button.configure(state="disabled")
+            self.progress_var.set("Running multiple tests...")
+            self.progress_bar['value'] = 0
+            self.progress_bar['maximum'] = num_runs
+            
+            # Clear previous results
+            self.plot_panel.clear_plots()
+            self.results_text.delete(1.0, tk.END)
+            
+            # Run multiple tests in separate thread
+            def run_multiple_tests_thread():
+                all_results = []
+                
+                try:
+                    for run_index in range(num_runs):
+                        if not self.is_running:
+                            break
+                        
+                        # Update progress
+                        self.root.after(0, self._update_multi_run_progress, run_index + 1, num_runs)
+                        
+                        # Create new GA instance for each run
+                        ga = GeneticAlgorithm(config)
+                        ga.set_objective(minimize)
+                        
+                        # Clear saved results for this run
+                        self.saved_results = []
+                        
+                        # Start execution time tracking for this run
+                        run_start_time = time.time()
+                        
+                        # Progress callback for individual run
+                        def progress_callback(result: GenerationResult):
+                            if not self.is_running:
+                                return
+                            # Save results for this run
+                            self.saved_results.append({
+                                "generation": result.generation,
+                                "best_fitness": result.best_fitness,
+                                "best_individual": result.best_individual,
+                                "mean_fitness": result.average_fitness,
+                                "std_dev": result.std_fitness
+                            })
+                        
+                        # Run GA
+                        results = ga.run(objective_function, progress_callback)
+                        
+                        # Calculate run time
+                        run_time = time.time() - run_start_time
+                        
+                        # Save results for this run
+                        if results:
+                            run_data = {
+                                'run_index': run_index + 1,
+                                'results': results,
+                                'saved_results': self.saved_results.copy(),
+                                'run_time': run_time,
+                                'convergence_data': ga._extract_convergence_data()
+                            }
+                            all_results.append(run_data)
+                            
+                            # Save files for this run
+                            self._save_single_run_results(base_filename, run_index + 1, run_data)
+                    
+                    # Update final results in GUI thread
+                    self.root.after(0, self._finish_multiple_tests, all_results, num_runs)
+                    
+                except Exception as e:
+                    # Handle errors in GUI thread
+                    error_msg = str(e)
+                    self.root.after(0, lambda: self._handle_error(error_msg))
+            
+            # Start thread
+            thread = threading.Thread(target=run_multiple_tests_thread)
+            thread.daemon = True
+            thread.start()
+            
+        except Exception as e:
+            self._handle_error(str(e))
+    
+    def _save_single_run_results(self, base_filename, run_index, run_data):
+        """Save results for a single run with indexed filename."""
+        try:
+            # Create indexed filenames
+            csv_path = f"{base_filename}_run_{run_index}.csv"
+            txt_path = f"{base_filename}_run_{run_index}_results.txt"
+            png_path = f"{base_filename}_run_{run_index}_plot.png"
+            
+            # Save CSV data
+            with open(csv_path, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=["generation", "best_fitness", "best_individual", "mean_fitness", "std_dev"])
+                writer.writeheader()
+                writer.writerows(run_data['saved_results'])
+            
+            # Save results text content
+            with open(txt_path, "w", encoding="utf-8") as f:
+                # Add header with configuration info
+                f.write("=== GENETIC ALGORITHM RESULTS ===\n")
+                f.write(f"Run Index: {run_index}\n")
+                f.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                
+                # Add configuration details
+                chromosome_type = self.config_panel.config_vars['chromosome_type'].get()
+                function_name = self.config_panel.config_vars['function_name'].get()
+                population_size = self.config_panel.config_vars['population_size'].get()
+                num_epochs = self.config_panel.config_vars['num_epochs'].get()
+                crossover_method = self.config_panel.config_vars['crossover_method'].get()
+                mutation_method = self.config_panel.config_vars['mutation_method'].get()
+                
+                f.write(f"Chromosome Type: {chromosome_type}\n")
+                f.write(f"Function: {function_name}\n")
+                f.write(f"Population Size: {population_size}\n")
+                f.write(f"Epochs: {num_epochs}\n")
+                f.write(f"Crossover Method: {crossover_method}\n")
+                f.write(f"Mutation Method: {mutation_method}\n")
+                f.write(f"Execution Time: {run_data['run_time']:.2f}s\n")
+                f.write("="*40 + "\n\n")
+                
+                # Add final results
+                results = run_data['results']
+                f.write(f"=== FINAL RESULTS ===\n")
+                f.write(f"Best Fitness: {results['best_fitness']:.6f}\n")
+                f.write(f"Best Solution: {results['best_solution']}\n")
+                f.write(f"Total Time: {run_data['run_time']:.2f}s\n")
+                f.write(f"Generations: {results['total_generations']}")
+            
+            # Save plot as PNG
+            # Create a temporary figure for this run
+            from matplotlib.figure import Figure
+            fig = Figure(figsize=(10, 6), dpi=100)
+            ax1 = fig.add_subplot(2, 1, 1)
+            ax2 = fig.add_subplot(2, 1, 2)
+            
+            # Adjust subplot parameters
+            fig.subplots_adjust(left=0.1, bottom=0.1, right=0.95, top=0.95, hspace=0.4)
+            
+            convergence_data = run_data['convergence_data']
+            generations = convergence_data['generations']
+            best_fitness = convergence_data['best_fitness']
+            avg_fitness = convergence_data['average_fitness']
+            std_fitness = convergence_data['std_fitness']
+            
+            # Plot 1: Best fitness over generations
+            ax1.plot(generations, best_fitness, 'b-', linewidth=2, label='Best Fitness')
+            ax1.set_title(f"Best Fitness vs Generation - Run {run_index}", fontsize=10)
+            ax1.set_xlabel("Generation", fontsize=9)
+            ax1.set_ylabel("Fitness Value", fontsize=9)
+            ax1.grid(True, alpha=0.3)
+            ax1.legend(fontsize=8)
+            ax1.tick_params(labelsize=8)
+            
+            # Plot 2: Average fitness and standard deviation
+            avg_fitness_array = np.array(avg_fitness)
+            std_fitness_array = np.array(std_fitness)
+            
+            ax2.plot(generations, avg_fitness, 'g-', linewidth=2, label='Average Fitness')
+            ax2.fill_between(generations, 
+                             avg_fitness_array - std_fitness_array,
+                             avg_fitness_array + std_fitness_array,
+                             alpha=0.3, color='green', label='+/-1 Standard Deviation')
+            ax2.set_title(f"Average Fitness and Standard Deviation vs Generation - Run {run_index}", fontsize=10)
+            ax2.set_xlabel("Generation", fontsize=9)
+            ax2.set_ylabel("Fitness Value", fontsize=9)
+            ax2.grid(True, alpha=0.3)
+            ax2.legend(fontsize=8)
+            ax2.tick_params(labelsize=8)
+            
+            # Save plot
+            fig.savefig(png_path, dpi=300, bbox_inches='tight', 
+                       facecolor='white', edgecolor='none')
+            
+        except Exception as e:
+            print(f"Error saving run {run_index}: {e}")
+    
+    def _update_multi_run_progress(self, current_run, total_runs):
+        """Update progress during multiple test runs."""
+        if not self.is_running:
+            return
+            
+        # Update progress bar
+        self.progress_bar['value'] = current_run
+        
+        # Update status
+        self.progress_var.set(f"Running test {current_run}/{total_runs}")
+        self.execution_time_var.set(f"Test {current_run} in progress...")
+    
+    def _finish_multiple_tests(self, all_results, total_runs):
+        """Finish multiple test execution and display summary."""
+        self.is_running = False
+        self.run_button.configure(state="normal")
+        self.stop_button.configure(state="disabled")
+        self.multi_run_button.configure(state="normal")
+        
+        completed_runs = len(all_results)
+        self.progress_var.set(f"Completed {completed_runs}/{total_runs} tests")
+        
+        if all_results:
+            # Calculate summary statistics
+            best_fitnesses = [run['results']['best_fitness'] for run in all_results]
+            execution_times = [run['run_time'] for run in all_results]
+            
+            best_overall = min(best_fitnesses) if self.config_panel.is_minimize() else max(best_fitnesses)
+            worst_overall = max(best_fitnesses) if self.config_panel.is_minimize() else min(best_fitnesses)
+            avg_fitness = np.mean(best_fitnesses)
+            std_fitness = np.std(best_fitnesses)
+            avg_time = np.mean(execution_times)
+            
+            # Display summary results
+            self.results_text.delete(1.0, tk.END)
+            self.results_text.insert(tk.END, f"=== MULTIPLE RUNS SUMMARY ===\n")
+            self.results_text.insert(tk.END, f"Completed Runs: {completed_runs}/{total_runs}\n")
+            self.results_text.insert(tk.END, f"Best Overall: {best_overall:.6f}\n")
+            self.results_text.insert(tk.END, f"Worst Overall: {worst_overall:.6f}\n")
+            self.results_text.insert(tk.END, f"Average: {avg_fitness:.6f}\n")
+            self.results_text.insert(tk.END, f"Std Dev: {std_fitness:.6f}\n")
+            self.results_text.insert(tk.END, f"Avg Time: {avg_time:.2f}s\n")
+            
+            self.execution_time_var.set(f"Avg Time: {avg_time:.2f}s")
+            
+            # Show the best run's plot
+            best_run_index = np.argmin(best_fitnesses) if self.config_panel.is_minimize() else np.argmax(best_fitnesses)
+            best_run = all_results[best_run_index]
+            self.plot_panel.update_plots(best_run['convergence_data'])
+            
+            messagebox.showinfo("Multiple Tests Complete", 
+                               f"Completed {completed_runs}/{total_runs} test runs.\n"
+                               f"Files saved with indexed names.\n"
+                               f"Best result: {best_overall:.6f}")
+        
+        # Clear saved_results to avoid confusion with single runs
+        self.saved_results = []
     
     def run(self):
         """Start the GUI application."""

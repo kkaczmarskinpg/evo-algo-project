@@ -1,0 +1,17 @@
+=== GENETIC ALGORITHM RESULTS ===
+Run Index: 9
+Timestamp: 2025-12-02 13:45:30
+Chromosome Type: real
+Function: michalewicz
+Population Size: 100
+Epochs: 200
+Crossover Method: blend_alpha
+Mutation Method: gaussian
+Execution Time: 0.20s
+========================================
+
+=== FINAL RESULTS ===
+Best Fitness: -4.483056
+Best Solution: [2.202910526618541, 1.5696343058868396, 2.2193918182653736, 1.114348643008551, 1.7205229120000987]
+Total Time: 0.20s
+Generations: 200
