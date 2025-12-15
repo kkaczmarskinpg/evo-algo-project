@@ -1,0 +1,5 @@
+pygad>=3.0.0
+numpy>=1.21.0
+benchmark_functions>=1.1.2
+opfunu>=1.0.0
+matplotlib>=3.5.0
