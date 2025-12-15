@@ -421,7 +421,7 @@ def run_experiment(config_file='experiment_configuration.json', run_index=1):
     
     # Wyniki
     solution, solution_fitness, solution_idx = ga_instance.best_solution()
-    best_value = 1.0 / (solution_fitness + 1e-10)
+    best_value = -solution_fitness  # Ponieważ fitness = -result, to result = -fitness
     
     print(f"\n{'='*70}")
     print("RESULTS")
