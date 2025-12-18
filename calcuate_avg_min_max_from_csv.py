@@ -1,42 +1,42 @@
-import pandas as pd
 import os
+from pathlib import Path
+
+import pandas as pd
 
 # Sciezka do folderu z wynikami
-extract_path = "wyniki_max"
+# Dla struktury jak na obrazku uzyj: "wyniki/binary" (config -> funkcja -> run_* -> pliki)
+extract_path = Path("wyniki/real")
 
 # Lista folderow funkcji (stala)
-functions = ["f16_2014_10", "f16_2014_20", "f16_2014_30", "michalewicz10", "michalewicz20", "michalewicz30"]
+functions = ["f162014_10", "f162014_20", "f162014_30", "michalewicz2", "michalewicz5", "michalewicz10"]
 
 # Wyniki zbiorcze
 summary_data = []
 
 # Przejscie po wszystkich konfiguracjach
-for config_name in os.listdir(extract_path):
-    config_path = os.path.join(extract_path, config_name)
-    if not os.path.isdir(config_path):
+for config_path in extract_path.iterdir():
+    if not config_path.is_dir():
         continue
 
-    result_row = {"config": config_name}
+    result_row = {"config": config_path.name}
 
     # Dla kazdej funkcji
     for func in functions:
-        func_path = os.path.join(config_path, func)
-        if not os.path.isdir(func_path):
+        func_path = config_path / func
+        if not func_path.is_dir():
             continue
 
         best_values = []
 
-        # Przejscie po plikach CSV w danej funkcji
-        for file in os.listdir(func_path):
-            if file.endswith(".csv"):
-                file_path = os.path.join(func_path, file)
-                try:
-                    df = pd.read_csv(file_path)
-                    if "best_fitness" in df.columns:
-                        best_value = df["best_fitness"].min()
-                        best_values.append(best_value)
-                except Exception as e:
-                    print(f"Blad w pliku {file_path}: {e}")
+        # Przejscie po plikach CSV w danej funkcji (rekurencyjnie, bo CSV leza np. w run_1/run_1.csv)
+        for file_path in func_path.rglob("*.csv"):
+            try:
+                df = pd.read_csv(file_path)
+                if "best_fitness" in df.columns:
+                    best_value = df["best_fitness"].min()
+                    best_values.append(best_value)
+            except Exception as e:
+                print(f"Blad w pliku {file_path}: {e}")
 
         # Jesli znaleziono dane
         if best_values:
@@ -55,7 +55,7 @@ for config_name in os.listdir(extract_path):
 summary_df = pd.DataFrame(summary_data)
 
 # Zapis do pliku Excel
-output_path = "podsumowanie_wynikow.xlsx"
+output_path = f"podsumowanie_wynikow_{extract_path.name}.xlsx"
 summary_df.to_excel(output_path, index=False)
 
 print(f"Zapisano wyniki do pliku: {output_path}")

@@ -1,0 +1,17 @@
+=== GENETIC ALGORITHM RESULTS ===
+Run Index: 7
+Timestamp: 2025-12-17 11:36:43
+Representation: real
+Function: michalewicz
+Population Size: 100
+Generations: 200
+Selection: tournament
+Crossover: single_point
+Mutation: random
+Execution Time: 0.85s
+========================================
+
+=== FINAL RESULTS ===
+Best Fitness: -3.815624
+Best Solution: [2.2148154957412713, 1.5982910159863966, 2.287984534569343, 1.931116122216963, 2.2198681916632528]
+Total Time: 0.85s

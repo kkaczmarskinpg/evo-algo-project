@@ -1,0 +1,17 @@
+=== GENETIC ALGORITHM RESULTS ===
+Run Index: 1
+Timestamp: 2025-12-17 12:22:07
+Representation: real
+Function: f16_2014
+Population Size: 100
+Generations: 200
+Selection: rws
+Crossover: two_points
+Mutation: swap
+Execution Time: 3.02s
+========================================
+
+=== FINAL RESULTS ===
+Best Fitness: 1603.507797
+Best Solution: [-52.45452249678244, 74.01377754506024, -65.60044268468766, 10.581821511990029, -3.815776612402061, -3.2695494022075167, 49.65367414832292, -79.19394646616571, 31.65743489032775, 28.96691992555165]
+Total Time: 3.02s

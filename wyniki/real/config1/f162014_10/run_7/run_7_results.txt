@@ -1,0 +1,17 @@
+=== GENETIC ALGORITHM RESULTS ===
+Run Index: 7
+Timestamp: 2025-12-17 11:42:43
+Representation: real
+Function: f16_2014
+Population Size: 100
+Generations: 200
+Selection: tournament
+Crossover: single_point
+Mutation: random
+Execution Time: 2.82s
+========================================
+
+=== FINAL RESULTS ===
+Best Fitness: 1603.100896
+Best Solution: [14.771401370659959, -23.69819562626678, -87.19242654523109, 39.05846970379247, -2.7678812770208765, 22.949474023675933, 34.50392494825071, -54.67959913087553, -8.568501063830695, -35.2225987446328]
+Total Time: 2.82s

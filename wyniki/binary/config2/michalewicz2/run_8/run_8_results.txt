@@ -1,0 +1,18 @@
+=== GENETIC ALGORITHM RESULTS ===
+Run Index: 8
+Timestamp: 2025-12-17 12:07:58
+Representation: binary
+Function: michalewicz
+Population Size: 100
+Generations: 200
+Selection: rws
+Crossover: two_points
+Mutation: swap
+Execution Time: 1.25s
+========================================
+
+=== FINAL RESULTS ===
+Best Fitness: -1.800885
+Best Solution (decoded): [2.2079374009844748, 1.5704127379483044]
+Best Solution (binary): [1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+Total Time: 1.25s
